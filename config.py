@@ -1,0 +1,22 @@
+import pygame
+
+
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+TILE_SIZE = 64
+WHITE = (255, 255, 255)
+BLACK = (0, 0 , 0)
+DARK_TILE = (118, 150, 86)
+LIGHT_TILE = (231, 208, 161)
+IMG_SCALE = (TILE_SIZE, TILE_SIZE)
+BOARD_SIZE = TILE_SIZE * 8
+BOARD_X = (SCREEN_WIDTH - BOARD_SIZE) // 2
+BOARD_Y = int((SCREEN_HEIGHT / 2 ) - (BOARD_SIZE / 2))
+
+SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+EASY = 2
+MEDIUM = 5
+HARD = 6
+
+def to_coords(x, y):
+    return BOARD_X + x * TILE_SIZE, BOARD_Y + y * TILE_SIZE

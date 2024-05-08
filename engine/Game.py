@@ -11,6 +11,7 @@ class Game:
         screen_size: tuple[int, int],
         caption: str,
         background=pg.Color(255, 255, 255),
+        game_objects: list["GameObject"] = [],
     ) -> None:
         if not pg.font:
             raise ImportError("pg.font not available")
@@ -27,6 +28,8 @@ class Game:
         self.screen = pg.display.set_mode(screen_size)
         self.clock = pg.time.Clock()
         self.game_objects: list["GameObject"] = []
+
+        self.add_game_objects(*game_objects)
 
     def run(self):
         self.running = True
@@ -51,10 +54,15 @@ class Game:
     def quit(self):
         self.running = False
 
-    def add_game_object(self, game_object: "GameObject"):
-        game_object.game = self
-        self.game_objects.append(game_object)
+    def add_game_objects(self, *game_objects: "GameObject"):
+        for game_object in game_objects:
+            if game_object.game is not None:
+                game_object.game.remove_game_objects(game_object)
 
-    def remove_game_object(self, game_object: "GameObject"):
-        self.game_objects.remove(game_object)
-        game_object.game = None
+            game_object.game = self
+            self.game_objects.append(game_object)
+
+    def remove_game_objects(self, *game_objects: "GameObject"):
+        for game_object in game_objects:
+            self.game_objects.remove(game_object)
+            game_object.game = None

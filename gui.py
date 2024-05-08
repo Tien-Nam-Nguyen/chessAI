@@ -26,7 +26,7 @@ for index, game_object in enumerate(game_objects):
         index * GAME_SIZE[0] // len(game_objects),
         index * GAME_SIZE[1] // len(game_objects),
     )
-    game.add_game_object(game_object)
+    game.add_game_objects(game_object)
 
 
 game.run()

@@ -1,6 +1,6 @@
 import pygame as pg
 from engine import Game
-from engine.game_objects import Sprite, SpriteButton
+from engine.game_objects import SpriteButton, Rectangle
 from engine.game_objects.SpriteButton import SpriteButtonConfig
 import Piece
 from Board import Board
@@ -37,6 +37,9 @@ PIECES = [f"{color}{piece}" for piece in PIECE_TYPES for color in ["b", "w"]]
 GAME_SIZE = (BoardConfig.SCREEN_WIDTH, BoardConfig.SCREEN_HEIGHT)
 ASSET_PATHS = {piece: f"assets/pieces/{piece}.png" for piece in PIECES}
 
+ODD_COLOR = (113, 149, 88)
+EVEN_COLOR = (235, 236, 210)
+
 
 class Chess(Game):
     def __init__(self):
@@ -54,7 +57,21 @@ class Chess(Game):
             for piece, sprite in self.sprites.items()
         }
 
-        game_pieces = [piece for pieces in self.pieces.values() for piece in pieces]
+        self.tiles = [
+            Rectangle(
+                *self.calc_piece_game_coords(x, y),
+                BoardConfig.TILE_SIZE,
+                BoardConfig.TILE_SIZE,
+                color=(x + y) % 2 and ODD_COLOR or EVEN_COLOR,
+                name=f"Tile{x}{y}",
+            )
+            for x in range(8)
+            for y in range(8)
+        ]
+
+        game_pieces = self.tiles + [
+            piece for pieces in self.pieces.values() for piece in pieces
+        ]
 
         super().__init__(
             GAME_SIZE, caption="Sprite Renderer Example", game_objects=game_pieces

@@ -1,7 +1,8 @@
 import math
 import pygame as pg
 from engine import Game
-from engine.game_objects import Sprite
+from engine.game_objects import Sprite, SpriteButton
+from engine.game_objects.SpriteButton import SpriteButtonConfig
 
 PIECE_TYPES = [
     "b",
@@ -23,7 +24,10 @@ class Chess(Game):
     def __init__(self):
         sprites = {path: pg.image.load(path) for path in ASSET_PATHS}
         game_objects = [
-            Sprite(sprite, name=path, active=False) for path, sprite in sprites.items()
+            # Sprite(sprite, name=path, active=False)
+            # for path, sprite in sprites.items()
+            SpriteButton(SpriteButtonConfig(sprite), name=path, active=False)
+            for path, sprite in sprites.items()
         ]
 
         super().__init__(
@@ -42,20 +46,6 @@ class Chess(Game):
 
         self.chess_piece_a.add_child(self.chess_piece_b)
         self.chess_piece_b.transform.x = 100
-
-    def tick(self):
-        super().tick()
-        self.chess_piece_a.transform.rotation = (pg.time.get_ticks() / 60 * 2) % 360
-        self.chess_piece_a.transform.scale_x = abs(
-            math.sin(math.radians(pg.time.get_ticks() / 60 * 2))
-        )
-        self.chess_piece_a.transform.scale_y = abs(
-            math.cos(math.radians(pg.time.get_ticks() / 60 * 2))
-        )
-
-        self.chess_piece_b.transform.x = 100 + 50 * math.sin(
-            math.radians(pg.time.get_ticks() / 60 * 2)
-        )
 
 
 chess = Chess()

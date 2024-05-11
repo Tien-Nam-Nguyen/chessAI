@@ -21,6 +21,37 @@ class GameObject:
         self.add_component(transform)
         self.transform = transform
 
+    @property
+    def active_in_hierarchy(self) -> bool:
+        if self.game is None:
+            return False
+
+        if self.game.running is False:
+            return False
+
+        if self.active is False:
+            return False
+
+        if self.parent is not None:
+            return self.parent.active_in_hierarchy
+
+        return True
+
+    def core_start(self):
+        if self.game is None:
+            return
+
+        if self.active is False:
+            return
+
+        for children in self.children:
+            children.core_start()
+
+        for component in self.components:
+            component.core_start()
+
+        self.start()
+
     def core_update(self):
         if self.game is None:
             return
@@ -35,6 +66,10 @@ class GameObject:
             component.core_update()
 
         self.update()
+
+    def start(self):
+        """Override this method to add custom logic when the GameObject is added to the game."""
+        pass
 
     def update(self):
         """Override this method to add custom update logic."""

@@ -1,2 +1,2 @@
-from .Transform import Transform
+from .transform import Transform
 from .SpriteRenderer import SpriteRenderer

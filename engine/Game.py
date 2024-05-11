@@ -28,28 +28,49 @@ class Game:
         self.screen = pg.display.set_mode(screen_size)
         self.clock = pg.time.Clock()
         self.game_objects: list["GameObject"] = []
+        self.running = False
 
         self.add_game_objects(*game_objects)
 
     def run(self):
         self.running = True
 
+        self.start_tick()
+
         while self.running:
-            self.clock.tick(60)
-
-            for event in pg.event.get():
-                if event.type == pg.QUIT:
-                    self.quit()
-
-            self.screen.fill(self.background)
-
-            for game_object in self.game_objects:
-                game_object.core_update()
-
-            pg.display.flip()
-            pg.display.update()
+            self.tick()
 
         pg.quit()
+
+    def start_tick(self):
+        self.clock.tick(60)
+
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                self.quit()
+
+        self.screen.fill(self.background)
+
+        for game_object in self.game_objects:
+            game_object.core_start()
+
+        pg.display.flip()
+        pg.display.update()
+
+    def tick(self):
+        self.clock.tick(60)
+
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                self.quit()
+
+        self.screen.fill(self.background)
+
+        for game_object in self.game_objects:
+            game_object.core_update()
+
+        pg.display.flip()
+        pg.display.update()
 
     def quit(self):
         self.running = False

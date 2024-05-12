@@ -1,10 +1,12 @@
 from typing import Callable
 from functools import reduce
 import pygame as pg
+from random import seed, randint
 from engine import Game
-from engine.game_objects import SpriteButton, Rectangle, Label
+from engine.game_objects import SpriteButton, Rectangle, Label, LabelButton
 from engine.game_components.label_renderer import LabelRenderConfig
 from engine.game_objects.SpriteButton import SpriteButtonConfig
+from engine.game_objects.LabelButton import LabelButtonConfig
 from engine.game_components.button import ButtonEvents, Button as ButtonComponent
 
 import Piece as BackendPiece
@@ -49,8 +51,9 @@ EVEN_COLOR = (235, 236, 210)
 ODD_SELECTED_COLOR = (70, 110, 40)
 EVEN_SELECTED_COLOR = (170, 170, 170)
 
-PLAYER_FIRST = False
+PLAYER_FIRST = True
 PLAYER_COLOR = BoardConfig.WHITE if PLAYER_FIRST else BoardConfig.BLACK
+SEED = 0
 
 
 class Piece(SpriteButton):
@@ -91,6 +94,7 @@ class Tile(Rectangle):
 
 class Chess(Game):
     def __init__(self):
+        seed(SEED)
         self.sprites = {
             piece: pg.image.load(path) for piece, path in ASSET_PATHS.items()
         }
@@ -154,19 +158,59 @@ class Chess(Game):
 
         self.potential_moves: list[tuple[tuple[int, int], tuple[int, int]]] = []
 
-        self.turn_indicator_font = pg.font.Font(None, 36)
+        self.heading_font = pg.font.Font(None, 36)
+        self.body_font = pg.font.Font(None, 24)
+
         self.turn_indicator = self.place_turn_indicator()
         self.add_game_objects(self.turn_indicator)
 
+        self.button_section = self.place_button_heading()
+        self.add_game_objects(self.button_section)
+
+        self.buttons = self.place_buttons()
+        self.add_game_objects(*self.buttons.values())
+
+    def place_buttons(self):
+        random_move_button = self.place_random_move_button()
+
+        return {
+            random_move_button.name: random_move_button,
+        }
+
+    def place_random_move_button(self):
+        button = LabelButton(
+            self.body_font,
+            "Make Random Move",
+            LabelButtonConfig(
+                LabelRenderConfig(BoardConfig.BLACK),
+                rest_scale=1.0,
+                hover_scale=1.2,
+                pressed_scale=1.3,
+            ),
+            name="RandomMoveButton",
+        )
+
+        button.transform.x = 135
+        button.transform.y = 100
+
+        button.button_component.on(
+            ButtonEvents.CLICK,
+            lambda button: self.on_click_random_move_button(button.game_object),
+        )
+
+        return button
+
+    def on_click_random_move_button(self, button):
+        if len(self.available_moves) == 0:
+            return
+
+        move = self.available_moves[randint(0, len(self.available_moves) - 1)]
+        self.make_move(move)
+
     def place_turn_indicator(self):
-        self.is_players_turn = PLAYER_FIRST
-
-        text = "Player's turn on " if self.is_players_turn else "AI's turn on "
-        text += "White" if self.board.turnColor == BoardConfig.WHITE else "Black"
-
         indicator = Label(
-            self.turn_indicator_font,
-            text,
+            self.heading_font,
+            self.get_turn_indicator_text(),
             LabelRenderConfig(BoardConfig.BLACK),
             name="TurnIndicator",
         )
@@ -178,6 +222,22 @@ class Chess(Game):
         indicator.transform.y = top
 
         return indicator
+
+    def place_button_heading(self):
+        label = Label(
+            self.heading_font,
+            "Buttons",
+            LabelRenderConfig(BoardConfig.BLACK),
+            name="ButtonSectionLabel",
+        )
+
+        left_x = 100
+        top_y = 60
+
+        label.transform.x = left_x
+        label.transform.y = top_y
+
+        return label
 
     def calc_pieces_size(self):
         max_size = max(
@@ -288,18 +348,18 @@ class Chess(Game):
         if len(self.potential_moves) == 0:
             return
 
-        dests = reduce(
-            lambda acc, move: (
-                acc + [move] if move[1] == (tile.coord_x, tile.coord_y) else acc
-            ),
-            self.potential_moves,
-            [],
-        )
+        for move in self.potential_moves:
+            if move[1] == (tile.coord_x, tile.coord_y):
+                self.make_move(move)
+                break
 
-        if len(dests) == 0:
-            return
-
-        print(dests)
+    def make_move(self, move: tuple[tuple[int, int], tuple[int, int]]):
+        self.board.make_move(*move)
+        self.pieces_by_coords = self.sync_pieces()
+        self.available_moves = self.board.get_moves()
+        self.potential_moves = []
+        self.recolor_tiles([])
+        self.update_turn_indicator()
 
     def recolor_tiles(self, selected_tiles: list[tuple[int, int]]):
         for x in range(8):
@@ -313,12 +373,13 @@ class Chess(Game):
             )
             self.tiles[tile].color = color
 
-    def update(self):
-        if self.board.playerTurn != self.is_players_turn:
-            self.is_players_turn = self.board.playerTurn
-            text = "Player's turn on" if self.is_players_turn else "AI's turn on"
-            text += "White" if self.board.turnColor == BoardConfig.WHITE else "Black"
-            self.turn_indicator.text = text
+    def update_turn_indicator(self):
+        self.turn_indicator.label_componenet.label = self.get_turn_indicator_text()
+
+    def get_turn_indicator_text(self):
+        text = "Player's turn on " if self.board.playerTurn else "AI's turn on "
+        text += "White" if self.board.turnColor == BoardConfig.WHITE else "Black"
+        return text
 
 
 chess = Chess()

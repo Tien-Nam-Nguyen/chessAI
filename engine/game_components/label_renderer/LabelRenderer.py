@@ -21,22 +21,27 @@ class LabelRenderer(GameComponent):
             LabelRenderConfig() if render_config is None else render_config
         )
         self.font = font
+        self.surface = self.render_surface()
 
     def update(self):
         position = self.game_object.transform.world_position
         scale = self.game_object.transform.world_scale
         rotation = self.game_object.transform.world_rotation
 
-        # render the label
-        label_surface = self.font.render(
+        self.surface = self.render_surface()
+        self.surface = pg.transform.scale_by(self.surface, scale)
+        self.surface, o_pos = rotate_with_anchor(self.surface, position, rotation)
+        self.surface.set_alpha(self.render_config.opacity)
+
+        self.game_object.game.screen.blit(self.surface, o_pos)
+
+    def render_surface(self):
+        return self.font.render(
             self.label,
             self.render_config.anti_aliasing,
             self.render_config.color,
             self.render_config.background,
         )
 
-        label_surface = pg.transform.scale_by(label_surface, scale)
-        label_surface, o_pos = rotate_with_anchor(label_surface, position, rotation)
-        label_surface.set_alpha(self.render_config.opacity)
-
-        self.game_object.game.screen.blit(label_surface, o_pos)
+    def get_rect(self):
+        return self.surface.get_rect()

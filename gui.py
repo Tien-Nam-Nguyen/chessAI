@@ -177,13 +177,63 @@ class Chess(Game):
         self.add_game_objects(*self.buttons.values())
 
     def place_buttons(self):
+        new_game_button = self.place_new_game_button()
+        undo_move_button = self.place_undo_move_button()
         random_move_button = self.place_random_move_button()
         minimax_move_button = self.place_minimax_move_button()
 
         return {
+            new_game_button.name: new_game_button,
+            undo_move_button.name: undo_move_button,
             random_move_button.name: random_move_button,
             minimax_move_button.name: minimax_move_button,
         }
+
+    def place_new_game_button(self):
+        button = LabelButton(
+            self.body_font,
+            "New Game",
+            LabelButtonConfig(
+                LabelRenderConfig(BoardConfig.BLACK),
+                rest_scale=1.0,
+                hover_scale=1.2,
+                pressed_scale=1.3,
+            ),
+            name="NewGameButton",
+        )
+
+        button.transform.x = 97
+        button.transform.y = 200
+
+        button.button_component.on(
+            ButtonEvents.CLICK,
+            lambda button: self.on_click_new_game_button(button.game_object),
+        )
+
+        return button
+
+    def place_undo_move_button(self):
+        button = LabelButton(
+            self.body_font,
+            "Undo",
+            LabelButtonConfig(
+                LabelRenderConfig(BoardConfig.BLACK),
+                rest_scale=1.0,
+                hover_scale=1.2,
+                pressed_scale=1.3,
+            ),
+            name="UndoMoveButton",
+        )
+
+        button.transform.x = 77
+        button.transform.y = 290
+
+        button.button_component.on(
+            ButtonEvents.CLICK,
+            lambda button: self.on_click_undo_move_button(button.game_object),
+        )
+
+        return button
 
     def place_random_move_button(self):
         button = LabelButton(
@@ -199,7 +249,7 @@ class Chess(Game):
         )
 
         button.transform.x = 135
-        button.transform.y = 100
+        button.transform.y = 230
 
         button.button_component.on(
             ButtonEvents.CLICK,
@@ -222,7 +272,7 @@ class Chess(Game):
         )
 
         button.transform.x = 135
-        button.transform.y = 130
+        button.transform.y = 260
 
         button.button_component.on(
             ButtonEvents.CLICK,
@@ -230,6 +280,22 @@ class Chess(Game):
         )
 
         return button
+
+    def on_click_new_game_button(self, button):
+        self.board = Board(playerColor=PLAYER_COLOR)
+        self.pieces_by_coords = self.sync_pieces()
+        self.available_moves = self.board.get_moves()
+        self.potential_moves = []
+        self.recolor_tiles([])
+        self.update_turn_indicator()
+
+    def on_click_undo_move_button(self, button):
+        self.board.unmake_move()
+        self.pieces_by_coords = self.sync_pieces()
+        self.available_moves = self.board.get_moves()
+        self.potential_moves = []
+        self.recolor_tiles([])
+        self.update_turn_indicator()
 
     def on_click_random_move_button(self, button):
         if len(self.available_moves) == 0:
@@ -275,13 +341,13 @@ class Chess(Game):
     def place_button_heading(self):
         label = Label(
             self.heading_font,
-            "Buttons",
+            "Controls",
             LabelRenderConfig(BoardConfig.BLACK),
             name="ButtonSectionLabel",
         )
 
-        left_x = 100
-        top_y = 60
+        left_x = 105
+        top_y = 170
 
         label.transform.x = left_x
         label.transform.y = top_y

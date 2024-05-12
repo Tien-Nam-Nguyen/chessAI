@@ -1,6 +1,6 @@
 # CHESS MINIMAX
 
-## Cach su dung
+## Cach su dung backend
 
 ### 1. Setup
 
@@ -17,6 +17,14 @@ python test.py
 ```
 
 ### 3. Nhap x, y (hoanh do, tung do) voi goc toa do la goc tren cung ben trai
+
+## Cach su dung gui
+
+```bash
+pip install -r requirements.txt
+python gui.py
+
+```
 
 ## Attribute
 

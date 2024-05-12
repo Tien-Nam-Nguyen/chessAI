@@ -1,3 +1,4 @@
+from typing import Callable
 from functools import reduce
 import pygame as pg
 from engine import Game
@@ -28,13 +29,15 @@ PIECE_OBJECT_MAP = {
     "r": BackendPiece.Rook,
 }
 
+PIECE_OBJECT_RMAP = {piece: sprite for sprite, piece in PIECE_OBJECT_MAP.items()}
+
 PIECE_COUNT = {
-    "b": 2,
-    "k": 1,
-    "n": 2,
+    "b": 8,
+    "k": 8,
+    "n": 8,
     "p": 8,
-    "q": 1,
-    "r": 2,
+    "q": 8,
+    "r": 8,
 }
 
 PIECES = [f"{color}{piece}" for piece in PIECE_TYPES for color in ["b", "w"]]
@@ -46,7 +49,7 @@ EVEN_COLOR = (235, 236, 210)
 ODD_SELECTED_COLOR = (70, 110, 40)
 EVEN_SELECTED_COLOR = (170, 170, 170)
 
-PLAYER_FIRST = True
+PLAYER_FIRST = False
 PLAYER_COLOR = BoardConfig.WHITE if PLAYER_FIRST else BoardConfig.BLACK
 
 
@@ -55,6 +58,7 @@ class Piece(SpriteButton):
         self,
         coord_x: int,
         coord_y: int,
+        color: pg.color.Color,
         config: SpriteButtonConfig,
         name="Piece",
         active=True,
@@ -62,6 +66,7 @@ class Piece(SpriteButton):
         super().__init__(config, name, active)
         self.coord_x = coord_x
         self.coord_y = coord_y
+        self.color = color
 
 
 class Tile(Rectangle):
@@ -95,8 +100,9 @@ class Chess(Game):
         self.pieces = {
             piece: [
                 Piece(
-                    0,
-                    0,
+                    -1,
+                    -1,
+                    BoardConfig.WHITE if piece[0] == "w" else BoardConfig.BLACK,
                     SpriteButtonConfig(
                         sprite,
                         rest_scale=scale,
@@ -182,35 +188,52 @@ class Chess(Game):
         scale = BoardConfig.TILE_SIZE / max_size
         return scale
 
-    def sync_pieces(self):
-        unassigned_pieces = {
-            piece: pieces.copy() for piece, pieces in self.pieces.items()
-        }
+    def reset_pieces(self):
+        for pieces in self.pieces.values():
+            for piece in pieces:
+                piece.button_component.active = False
+                piece.active = False
+                piece.coord_x = -1
+                piece.coord_y = -1
 
-        reversed_map = {piece: sprite for sprite, piece in PIECE_OBJECT_MAP.items()}
+    def find_unassigned_pieces(self, name: str):
+        for piece in self.pieces[name]:
+            if not piece.active:
+                return piece
+
+    def sync_pieces(self):
+        def for_each_backend_piece(callback: Callable[[BackendPiece.Piece], None]):
+            for row in self.board.tiles:
+                for backend_piece in row:
+                    if backend_piece is None:
+                        continue
+
+                    callback(backend_piece)
 
         pieces_by_coords = {}
+        turn_color = self.board.turnColor
 
-        for row in self.board.tiles:
-            for backend_piece in row:
-                if backend_piece is None:
-                    continue
+        def sync_piece_with_backend(backend_piece: BackendPiece.Piece):
+            piece_type: str = PIECE_OBJECT_RMAP.get(type(backend_piece))
+            is_white = backend_piece.color == BoardConfig.WHITE
+            is_same_as_turn_color = backend_piece.color == turn_color
 
-                piece_type: str = reversed_map.get(type(backend_piece))
-                is_white = backend_piece.color == BoardConfig.WHITE
+            piece_name = f"{is_white and 'w' or 'b'}{piece_type}"
+            piece = self.find_unassigned_pieces(piece_name)
 
-                piece_name = f"{is_white and 'w' or 'b'}{piece_type}"
-                piece = unassigned_pieces[piece_name].pop()
+            coords = self.calc_piece_game_coords(backend_piece.x, backend_piece.y)
 
-                coords = self.calc_piece_game_coords(backend_piece.x, backend_piece.y)
+            piece.active = True
+            piece.button_component.active = is_same_as_turn_color
+            piece.coord_x = backend_piece.x
+            piece.coord_y = backend_piece.y
+            piece.transform.x = coords[0]
+            piece.transform.y = coords[1]
 
-                piece.active = True
-                piece.coord_x = backend_piece.x
-                piece.coord_y = backend_piece.y
-                piece.transform.x = coords[0]
-                piece.transform.y = coords[1]
+            pieces_by_coords[(backend_piece.x, backend_piece.y)] = piece
 
-                pieces_by_coords[(backend_piece.x, backend_piece.y)] = piece
+        self.reset_pieces()
+        for_each_backend_piece(sync_piece_with_backend)
 
         return pieces_by_coords
 

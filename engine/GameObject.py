@@ -38,10 +38,7 @@ class GameObject:
         return True
 
     def core_start(self):
-        if self.game is None:
-            return
-
-        if self.active is False:
+        if self.active_in_hierarchy is False:
             return
 
         for children in self.children:
@@ -53,10 +50,7 @@ class GameObject:
         self.start()
 
     def core_update(self):
-        if self.game is None:
-            return
-
-        if self.active is False:
+        if self.active_in_hierarchy is False:
             return
 
         for children in self.children:

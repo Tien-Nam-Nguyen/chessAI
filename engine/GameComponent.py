@@ -18,22 +18,12 @@ class GameComponent:
         return self.active and self.game_object.active_in_hierarchy
 
     def core_start(self):
-        if self.game_object is None:
-            return
-
-        if self.active is False:
-            return
-
-        self.start()
+        if self.active_in_hierarchy:
+            self.start()
 
     def core_update(self):
-        if self.game_object is None:
-            return
-
-        if self.active is False:
-            return
-
-        self.update()
+        if self.active_in_hierarchy:
+            self.update()
 
     def start(self):
         """Override this method to add custom start logic."""

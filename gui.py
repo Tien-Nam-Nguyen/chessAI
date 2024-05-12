@@ -17,6 +17,10 @@ from Board import Board
 import config as BoardConfig
 from core import minimax
 
+PLAYER_FIRST = True
+SEED = 0
+MINIMAX_DEPTH = BoardConfig.EASY
+
 PIECE_TYPES = [
     "b",
     "k",
@@ -55,11 +59,7 @@ EVEN_COLOR = (235, 236, 210)
 ODD_SELECTED_COLOR = (70, 110, 40)
 EVEN_SELECTED_COLOR = (170, 170, 170)
 
-PLAYER_FIRST = True
 PLAYER_COLOR = BoardConfig.WHITE if PLAYER_FIRST else BoardConfig.BLACK
-SEED = 0
-
-MINIMAX_DEPTH = BoardConfig.EASY
 
 
 class Piece(SpriteButton):
@@ -426,6 +426,16 @@ class Chess(Game):
         self.turn_indicator.label_componenet.label = self.get_turn_indicator_text()
 
     def get_turn_indicator_text(self):
+        if self.board.gameover:
+            is_draw = self.board.game_result[1] == "draw"
+            text = "Game Over!"
+            text += (
+                "Draw"
+                if is_draw
+                else f"{self.board.game_result[0]} {self.board.game_result[1]}"
+            )
+            return text
+
         text = "Player's turn on " if self.board.playerTurn else "AI's turn on "
         text += "White" if self.board.turnColor == BoardConfig.WHITE else "Black"
         return text

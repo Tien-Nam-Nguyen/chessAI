@@ -1,7 +1,10 @@
 from typing import Callable
 from functools import reduce
 import pygame as pg
+import time
+from math import inf
 from random import seed, randint
+
 from engine import Game
 from engine.game_objects import SpriteButton, Rectangle, Label, LabelButton
 from engine.game_components.label_renderer import LabelRenderConfig
@@ -12,6 +15,7 @@ from engine.game_components.button import ButtonEvents, Button as ButtonComponen
 import Piece as BackendPiece
 from Board import Board
 import config as BoardConfig
+from core import minimax
 
 PIECE_TYPES = [
     "b",
@@ -54,6 +58,8 @@ EVEN_SELECTED_COLOR = (170, 170, 170)
 PLAYER_FIRST = True
 PLAYER_COLOR = BoardConfig.WHITE if PLAYER_FIRST else BoardConfig.BLACK
 SEED = 0
+
+MINIMAX_DEPTH = BoardConfig.EASY
 
 
 class Piece(SpriteButton):
@@ -172,9 +178,11 @@ class Chess(Game):
 
     def place_buttons(self):
         random_move_button = self.place_random_move_button()
+        minimax_move_button = self.place_minimax_move_button()
 
         return {
             random_move_button.name: random_move_button,
+            minimax_move_button.name: minimax_move_button,
         }
 
     def place_random_move_button(self):
@@ -200,11 +208,52 @@ class Chess(Game):
 
         return button
 
+    def place_minimax_move_button(self):
+        button = LabelButton(
+            self.body_font,
+            "Make Minimax Move",
+            LabelButtonConfig(
+                LabelRenderConfig(BoardConfig.BLACK),
+                rest_scale=1.0,
+                hover_scale=1.2,
+                pressed_scale=1.3,
+            ),
+            name="MinimaxMoveButton",
+        )
+
+        button.transform.x = 135
+        button.transform.y = 130
+
+        button.button_component.on(
+            ButtonEvents.CLICK,
+            lambda button: self.on_click_minimax_move_button(button.game_object),
+        )
+
+        return button
+
     def on_click_random_move_button(self, button):
         if len(self.available_moves) == 0:
             return
 
         move = self.available_moves[randint(0, len(self.available_moves) - 1)]
+        self.make_move(move)
+
+    def on_click_minimax_move_button(self, button):
+        if len(self.available_moves) == 0:
+            return
+
+        is_bot_turn = not self.board.playerTurn
+        bot_color = self.board.botColor
+
+        start = time.time()
+        move, eval_score = minimax(
+            self.board, MINIMAX_DEPTH, -inf, inf, is_bot_turn, bot_color
+        )
+        end = time.time()
+
+        print(
+            f"Made move {move} in {end - start} seconds with minimax score {eval_score}."
+        )
         self.make_move(move)
 
     def place_turn_indicator(self):

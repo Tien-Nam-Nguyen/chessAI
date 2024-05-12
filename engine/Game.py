@@ -35,14 +35,14 @@ class Game:
     def run(self):
         self.running = True
 
-        self.start_tick()
+        self.pretick()
 
         while self.running:
             self.tick()
 
         pg.quit()
 
-    def start_tick(self):
+    def pretick(self):
         self.clock.tick(60)
 
         for event in pg.event.get():
@@ -69,6 +69,8 @@ class Game:
         for game_object in self.game_objects:
             game_object.core_update()
 
+        self.update()
+
         pg.display.flip()
         pg.display.update()
 
@@ -87,3 +89,7 @@ class Game:
         for game_object in game_objects:
             self.game_objects.remove(game_object)
             game_object.game = None
+
+    def update(self):
+        """Override this method to add custom update logic."""
+        pass

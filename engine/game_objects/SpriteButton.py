@@ -27,8 +27,8 @@ class SpriteButton(GameObject):
         self.add_component(self.sprite_renderer)
         self.add_component(self.button_component)
 
-        self.transform.scale_x = config.rest_scale
-        self.transform.scale_y = config.rest_scale
+        self.transform.scale_x = self.config.rest_scale
+        self.transform.scale_y = self.config.rest_scale
 
         self.setup_animation()
 
@@ -39,6 +39,9 @@ class SpriteButton(GameObject):
         self._start_scale = self.config.rest_scale
         self._end_scale = self.config.rest_scale
 
+        self.transform.scale_x = self._current_scale
+        self.transform.scale_y = self._current_scale
+
         def handle_down(button):
             self._scale_tween = Tween(0.0, 1.0, 500, Easing.ELASTIC, EasingMode.OUT)
             self._scale_tween.start()
@@ -47,7 +50,7 @@ class SpriteButton(GameObject):
             self._end_scale = self.config.pressed_scale
 
         def handle_up(button):
-            self._scale_tween = Tween(0.0, 1.0, 500, Easing.ELASTIC, EasingMode.OUT)
+            self._scale_tween = Tween(0.0, 1.0, 500, Easing.EXPO, EasingMode.OUT)
             self._scale_tween.start()
             self._scale_tween.update()
             self._start_scale = self._current_scale
@@ -61,7 +64,7 @@ class SpriteButton(GameObject):
             self._end_scale = self.config.hover_scale
 
         def handle_leave(button):
-            self._scale_tween = Tween(0.0, 1.0, 500, Easing.ELASTIC, EasingMode.OUT)
+            self._scale_tween = Tween(0.0, 1.0, 500, Easing.EXPO, EasingMode.OUT)
             self._scale_tween.start()
             self._scale_tween.update()
             self._start_scale = self._current_scale
@@ -73,18 +76,16 @@ class SpriteButton(GameObject):
         self.button_component.on(ButtonEvents.LEAVE, handle_leave)
 
     def update(self):
-        if self._scale_tween is None:
-            return
+        if self._scale_tween is not None:
+            self._scale_tween.update()
 
-        self._scale_tween.update()
+            self._current_scale = (
+                self._scale_tween.value * self._end_scale
+                + (1 - self._scale_tween.value) * self._start_scale
+            )
 
-        self._current_scale = (
-            self._scale_tween.value * self._end_scale
-            + (1 - self._scale_tween.value) * self._start_scale
-        )
-
-        self.transform.scale_x = self._current_scale
-        self.transform.scale_y = self._current_scale
+            self.transform.scale_x = self._current_scale
+            self.transform.scale_y = self._current_scale
 
         position = self.transform.world_position
         scale = self.transform.world_scale

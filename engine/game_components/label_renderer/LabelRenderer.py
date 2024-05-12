@@ -10,14 +10,16 @@ class LabelRenderer(GameComponent):
         self,
         font: pg.font.FontType,
         label="Label",
-        render_config=LabelRenderConfig(),
+        render_config: LabelRenderConfig | None = None,
         name="GameComponent:Label",
         active=True,
     ) -> None:
         super().__init__(name, active)
 
         self.label = label
-        self.render_config = render_config
+        self.render_config = (
+            LabelRenderConfig() if render_config is None else render_config
+        )
         self.font = font
 
     def update(self):

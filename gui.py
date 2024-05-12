@@ -17,9 +17,8 @@ from Board import Board
 import config as BoardConfig
 from core import minimax
 
-PLAYER_FIRST = True
 SEED = 0
-MINIMAX_DEPTH = BoardConfig.EASY
+MINIMAX_DEPTHS = [BoardConfig.EASY, BoardConfig.MEDIUM, BoardConfig.HARD]
 
 PIECE_TYPES = [
     "b",
@@ -50,6 +49,11 @@ PIECE_COUNT = {
     "r": 8,
 }
 
+PLAYER_COLOR_LABEL = {
+    BoardConfig.WHITE: "White",
+    BoardConfig.BLACK: "Black",
+}
+
 PIECES = [f"{color}{piece}" for piece in PIECE_TYPES for color in ["b", "w"]]
 GAME_SIZE = (BoardConfig.SCREEN_WIDTH, BoardConfig.SCREEN_HEIGHT)
 ASSET_PATHS = {piece: f"assets/pieces/{piece}.png" for piece in PIECES}
@@ -58,8 +62,6 @@ ODD_COLOR = (113, 149, 88)
 EVEN_COLOR = (235, 236, 210)
 ODD_SELECTED_COLOR = (70, 110, 40)
 EVEN_SELECTED_COLOR = (170, 170, 170)
-
-PLAYER_COLOR = BoardConfig.WHITE if PLAYER_FIRST else BoardConfig.BLACK
 
 
 class Piece(SpriteButton):
@@ -73,6 +75,7 @@ class Piece(SpriteButton):
         active=True,
     ):
         super().__init__(config, name, active)
+
         self.coord_x = coord_x
         self.coord_y = coord_y
         self.color = color
@@ -101,6 +104,9 @@ class Tile(Rectangle):
 class Chess(Game):
     def __init__(self):
         seed(SEED)
+        self.player_color = BoardConfig.WHITE
+        self.minimax_depth = MINIMAX_DEPTHS[0]
+
         self.sprites = {
             piece: pg.image.load(path) for piece, path in ASSET_PATHS.items()
         }
@@ -153,7 +159,7 @@ class Chess(Game):
             GAME_SIZE, caption="Sprite Renderer Example", game_objects=game_pieces
         )
 
-        self.board = Board(playerColor=PLAYER_COLOR)
+        self.board = Board(playerColor=self.player_color)
         self.pieces_by_coords = self.sync_pieces()
         self.listen_pieces_click()
         self.listen_tiles_click()
@@ -181,12 +187,16 @@ class Chess(Game):
         undo_move_button = self.place_undo_move_button()
         random_move_button = self.place_random_move_button()
         minimax_move_button = self.place_minimax_move_button()
+        minimax_depth_toggle_button = self.place_minimax_depth_toggle_button()
+        player_color_toggle_button = self.place_player_color_toggle_button()
 
         return {
             new_game_button.name: new_game_button,
             undo_move_button.name: undo_move_button,
             random_move_button.name: random_move_button,
             minimax_move_button.name: minimax_move_button,
+            minimax_depth_toggle_button.name: minimax_depth_toggle_button,
+            player_color_toggle_button.name: player_color_toggle_button,
         }
 
     def place_new_game_button(self):
@@ -281,8 +291,72 @@ class Chess(Game):
 
         return button
 
+    def place_minimax_depth_toggle_button(self):
+        button = LabelButton(
+            self.body_font,
+            f"Minimax Depth: {self.minimax_depth}",
+            LabelButtonConfig(
+                LabelRenderConfig(BoardConfig.BLACK),
+                rest_scale=1.0,
+                hover_scale=1.2,
+                pressed_scale=1.3,
+            ),
+            name="MinimaxDepthToggleButton",
+        )
+
+        button.transform.x = 124
+        button.transform.y = 320
+
+        button.button_component.on(
+            ButtonEvents.CLICK,
+            lambda button: self.on_click_minimax_depth_toggle_button(
+                button.game_object
+            ),
+        )
+
+        return button
+
+    def place_player_color_toggle_button(self):
+        button = LabelButton(
+            self.body_font,
+            f"Player Color: {PLAYER_COLOR_LABEL[self.player_color]}",
+            LabelButtonConfig(
+                LabelRenderConfig(BoardConfig.BLACK),
+                rest_scale=1.0,
+                hover_scale=1.2,
+                pressed_scale=1.3,
+            ),
+            name="PlayerColorToggleButton",
+        )
+
+        button.transform.x = 133
+        button.transform.y = 350
+
+        button.button_component.on(
+            ButtonEvents.CLICK,
+            lambda button: self.on_click_player_color_toggle_button(button.game_object),
+        )
+
+        return button
+
+    def on_click_player_color_toggle_button(self, button: LabelButton):
+        self.player_color = (
+            BoardConfig.WHITE
+            if self.player_color == BoardConfig.BLACK
+            else BoardConfig.BLACK
+        )
+        button.label_component.label = (
+            f"Player Color: {PLAYER_COLOR_LABEL[self.player_color]}"
+        )
+
+    def on_click_minimax_depth_toggle_button(self, button: LabelButton):
+        self.minimax_depth = MINIMAX_DEPTHS[
+            (MINIMAX_DEPTHS.index(self.minimax_depth) + 1) % len(MINIMAX_DEPTHS)
+        ]
+        button.label_component.label = f"Minimax Depth: {self.minimax_depth}"
+
     def on_click_new_game_button(self, button):
-        self.board = Board(playerColor=PLAYER_COLOR)
+        self.board = Board(playerColor=self.player_color)
         self.pieces_by_coords = self.sync_pieces()
         self.available_moves = self.board.get_moves()
         self.potential_moves = []
@@ -313,7 +387,7 @@ class Chess(Game):
 
         start = time.time()
         move, eval_score = minimax(
-            self.board, MINIMAX_DEPTH, -inf, inf, is_bot_turn, bot_color
+            self.board, self.minimax_depth, -inf, inf, is_bot_turn, bot_color
         )
         end = time.time()
 
